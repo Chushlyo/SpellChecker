@@ -14,6 +14,8 @@ public class CorpusReader
     
     private HashMap<String,Integer> ngrams;
     private Set<String> vocabulary;
+    
+    final static double K = 0.005; // K smoothing constant
         
     public CorpusReader() throws IOException
     {  
@@ -116,6 +118,27 @@ public class CorpusReader
         
         /** ADD CODE HERE **/  
         
+        
         return smoothedCount;        
     }
+    
+    public double ProbabilityWithDifferentWord(String w, String secondw, boolean followingWord){
+        if (w == null || secondw == null || w.length() == 0 || secondw.length() == 0){
+            throw new IllegalArgumentException ("The NGrams is empty");
+        }
+        double cBigrams;
+        if (followingWord){
+            cBigrams = getNGramCount(w + " " +secondw);
+        }
+        else{
+            cBigrams = getNGramCount(secondw + " " +w);
+        }
+        int cpw = getNGramCount (secondw);
+        double vs = getVocabularySize();
+        //K smoothing added according to definition
+        double probabillity =  (cBigrams + K) / (cpw + K * vs);
+        
+        return probabillity;  
+    }
+    
 }
