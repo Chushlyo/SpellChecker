@@ -6,14 +6,19 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class CorpusReader 
 {
     final static String CNTFILE_LOC = "samplecnt.txt";
     final static String VOCFILE_LOC = "samplevoc.txt";
     
+    private int maximumC;
     private HashMap<String,Integer> ngrams;
     private Set<String> vocabulary;
+    private HashMap <Integer, Integer> Frequency;
     
     final static double K = 0.005; // K smoothing constant
         
@@ -140,11 +145,67 @@ public class CorpusReader
         
         return probabillity;  
     }
+    
     public double getProbabillity (String nGram){
         double count = getNGramCount(nGram);
         double vs = getVocabularySize();
         double probabillity  = count/vs;
         return probabillity;
     }
+    // Add one smoothing added, not used
+    public double ProbabilityWithDifferentWordAddOneSmoothing(String w, String secondw, boolean followingWord){
+        if (w == null || secondw == null || w.length() == 0 || secondw.length() == 0){
+            throw new IllegalArgumentException ("The NGrams is empty");
+        }
+        double cBigrams;
+        if (followingWord){
+            cBigrams = getNGramCount(w + " " +secondw);
+        }
+        else{
+            cBigrams = getNGramCount(secondw + " " +w);
+        }
+        int cpw = getNGramCount (secondw);
+        double vs = getVocabularySize();
+        //K smoothing added according to definition
+        double probabillity =  (cBigrams + 1) / (cpw + vs);
+        
+        return probabillity;  
+    }
+    
+    /**
+     * Calculate frequencies of counts beforehand. Used for Good-Turing
+     * smoothing.
+     */
+    private void determineNGramCountFrequencies() {
+        this.Frequency = new HashMap<>();
+
+        List<Integer> counts = new ArrayList<>(this.ngrams.values());
+        int i;
+        // For all counts get frequency 
+        for (i = 1; counts.contains(i); i++) {
+            this.Frequency.put(i, Collections.frequency(counts, i));
+        }
+        this.maximumC = i;
+    }    
+    /**
+     * Good-Turing smoothing. -- NOT USED!
+     */
+    private int getGoodTuringSmoothedCount(String ngram) {
+        int N = this.ngrams.size();
+
+        // If bigram not contained in vocabulary, use frequency for a bigram with count 1
+        if (!this.ngrams.containsKey(ngram) || this.ngrams.get(ngram) == 0) {
+            return this.Frequency.get(1) / N;
+        } else { // For other bigrams with count > 0 use frequency of count + 1
+            int c = this.ngrams.get(ngram);
+            if (c < this.maximumC) { // For some high bigram counts there is no frequency for count + 1
+                return (c + 1) * (this.Frequency.get(c + 1)
+                        / (this.Frequency.get(c) * N));
+            } else { // use normal probability
+                return c / N;
+            }
+        }
+}
+
     
 }
