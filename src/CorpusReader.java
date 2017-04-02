@@ -140,5 +140,11 @@ public class CorpusReader
         
         return probabillity;  
     }
+    public double getProbabillity (String nGram){
+        double count = getNGramCount(nGram);
+        double vs = getVocabularySize();
+        double probabillity  = count/vs;
+        return probabillity;
+    }
     
 }
